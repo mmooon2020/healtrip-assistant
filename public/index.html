@@ -1,0 +1,55 @@
+<!doctype html><html lang="en" dir="ltr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><title>HealTrip Decision Assistant</title>
+<style>
+:root{--bg:#f6f8f8;--ink:#12302f;--mut:#5b7170;--line:#d5e0df;--card:#fff;--brand:#0f6b66;--red:#b3261e;--amb:#a15c00;--grn:#2e6b3a}
+@media(prefers-color-scheme:dark){:root{--bg:#0e1a1a;--ink:#e3efee;--mut:#8fa9a7;--line:#25403f;--card:#152726;--brand:#4fc2b9;--red:#ff8a80;--amb:#ffc46b;--grn:#8fd19b}}
+*{box-sizing:border-box}body{margin:0;font:16px/1.5 system-ui,"Segoe UI",Tahoma,sans-serif;background:var(--bg);color:var(--ink);height:100vh;display:flex;flex-direction:column;max-width:760px;margin-inline:auto}
+header{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid var(--line)}
+h1{font-size:18px;margin:0}button{font:inherit;cursor:pointer}
+#lang{background:none;border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:4px 10px}
+#log{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
+.m{max-width:88%;padding:10px 14px;border-radius:12px;background:var(--card);border:1px solid var(--line)}
+.u{align-self:flex-end;background:var(--brand);color:#fff;border-color:var(--brand)}
+.badge{display:inline-block;font-size:13px;font-weight:600;padding:2px 8px;border-radius:5px;margin-bottom:6px;border:1px solid currentColor}
+.emergency{color:var(--red)}.urgent{color:var(--amb)}.info{color:var(--mut)}
+.pv{border-inline-start:3px solid var(--brand);padding:6px 10px;margin-top:8px;font-size:15px}
+.pv small{color:var(--mut);display:block}ul{margin:6px 0;padding-inline-start:20px}
+details{margin-top:8px;font-size:13px;color:var(--mut)}pre{white-space:pre-wrap;direction:ltr;text-align:left;margin:4px 0}
+form{display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--line)}
+input{flex:1;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit}
+form button{background:var(--brand);color:#fff;border:0;border-radius:8px;padding:0 18px}
+input:focus-visible,button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.note{font-size:12px;color:var(--mut);padding:0 16px 8px;text-align:center}
+</style></head><body>
+<header><h1 id="t"></h1><button id="lang" type="button">العربية</button></header>
+<div id="log" aria-live="polite"></div>
+<div class="note" id="n"></div>
+<form id="f"><input id="i" maxlength="1000" autocomplete="off"><button id="s"></button></form>
+<script>
+const S={en:{t:"HealTrip Assistant",ph:"Describe your symptoms…",send:"Send",n:"Prototype. Not a diagnosis. In an emergency call 123.",
+ u:{emergency:"Emergency",urgent:"See a doctor soon",info:"More info needed"},trace:"Agent trace",err:"Connection problem. If urgent, call 123.",
+ hi:"Tell me what you're experiencing and I'll help you choose the next step.",city:"",fee:"EGP"},
+ ar:{t:"مساعد HealTrip",ph:"صف أعراضك…",send:"إرسال",n:"نموذج تجريبي، ليس تشخيصًا. في الطوارئ اتصل بـ 123.",
+ u:{emergency:"طوارئ",urgent:"راجع طبيبًا قريبًا",info:"نحتاج تفاصيل أكثر"},trace:"مسار الوكيل",err:"مشكلة في الاتصال. إن كانت الحالة عاجلة اتصل بـ 123.",
+ hi:"أخبرني بما تشعر به وسأساعدك في اختيار الخطوة التالية.",fee:"ج.م"}};
+const CITY={Alexandria:"الإسكندرية",Cairo:"القاهرة",Giza:"الجيزة"};
+let lang="en";const sid=crypto.randomUUID(),$=id=>document.getElementById(id),log=$("log");
+function apply(){document.documentElement.lang=lang;document.documentElement.dir=lang==="ar"?"rtl":"ltr";
+ $("t").textContent=S[lang].t;$("i").placeholder=S[lang].ph;$("s").textContent=S[lang].send;$("n").textContent=S[lang].n;$("lang").textContent=lang==="ar"?"English":"العربية";}
+function add(cls,node){const d=document.createElement("div");d.className="m "+cls;d.append(node);log.append(d);log.scrollTop=log.scrollHeight;}
+const txt=s=>document.createTextNode(s); // textContent only: no HTML injection
+function render(r){
+ const w=document.createElement("div"),b=document.createElement("span");b.className="badge "+r.urgency;b.textContent=S[lang].u[r.urgency];
+ const p=document.createElement("div");p.textContent=r.reply;w.append(b,p);
+ if(r.questions.length){const ul=document.createElement("ul");r.questions.forEach(q=>{const li=document.createElement("li");li.textContent=q;ul.append(li)});w.append(ul)}
+ r.cards.forEach(c=>{const d=document.createElement("div");d.className="pv";d.append(txt(c.name[lang]));
+  const m=document.createElement("small");m.textContent=[CITY[c.city]&&lang==="ar"?CITY[c.city]:c.city,c.er?(lang==="ar"?"طوارئ 24/7":"24/7 ER"):"",c.fee?c.fee+" "+S[lang].fee:"","★ "+c.rating].filter(Boolean).join(" • ");d.append(m);w.append(d)});
+ if(r.trace.length){const de=document.createElement("details"),sm=document.createElement("summary"),pr=document.createElement("pre");sm.textContent=S[lang].trace;pr.textContent=JSON.stringify(r.trace,null,1);de.append(sm,pr);w.append(de)}
+ add("",w);
+}
+$("lang").onclick=()=>{lang=lang==="en"?"ar":"en";apply()};
+$("f").onsubmit=async e=>{e.preventDefault();const v=$("i").value.trim();if(!v)return;$("i").value="";add("u",txt(v));
+ try{const res=await fetch("/api/chat",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({sessionId:sid,message:v,lang})});
+  if(!res.ok)throw 0;const r=await res.json();lang=r.lang;apply();render(r)}catch{add("",txt(S[lang].err))}};
+apply();add("",txt(S[lang].hi));
+</script></body></html>

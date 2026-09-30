@@ -1,0 +1,2 @@
+{"name":"healtrip-decision-assistant","version":"0.1.0","type":"module","private":true,
+ "scripts":{"start":"node src/server.js","test":"node src/test.js"},"engines":{"node":">=18"}}
